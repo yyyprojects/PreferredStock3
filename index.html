@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Guide to Preferred Stock</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals (Beige, Taupe, Soft Gray) with a Slate Blue Accent -->
+    <!-- Application Structure Plan: The SPA is designed with a user-centric, thematic flow rather than mirroring the report's chapters. The structure is: 1) Hero/Intro: Grabs attention and defines preferred stock simply. 2) Core Concepts: An interactive card-based section for key features (Dividends, Liquidation, Voting). This is more engaging than a list. 3) The Hybrid Nature (Comparison): A dedicated, visual section comparing Preferred Stock to Common Stock and Bonds side-by-side, using an interactive bar chart to make abstract risk/reward concepts tangible. This is the most critical section for user understanding. 4) Types of Preferreds: A tabbed interface to explore different types, which is more space-efficient and less overwhelming than a long scroll. 5) Pros & Cons: A toggle-based view (Investor vs. Issuer) to directly address the two main user personas, making the information highly relevant and easy to digest. This structure guides the user from basic definitions to complex comparisons and finally to practical considerations, creating a logical and intuitive learning path. -->
+    <!-- Visualization & Content Choices: 1. Core Characteristics: Report Info -> Key features like dividends, liquidation preference. Goal -> Inform & Engage. Viz/Method -> Interactive cards with icons (HTML/Unicode) and short text. Interaction -> Hover effects reveal more details. Justification -> More dynamic and less text-heavy than paragraphs. 2. Comparison (vs. Common/Bonds): Report Info -> Tables and descriptive comparisons. Goal -> Compare & Clarify. Viz/Method -> Side-by-side text blocks and a dynamic Chart.js bar chart. Interaction -> Buttons to update the chart, comparing securities on different metrics (Volatility, Income, etc.). Justification -> A visual, interactive comparison is far more effective for showing relative differences than static tables. Chart.js (Canvas) is used. 3. Types of Preferred Stock: Report Info -> List of types (Cumulative, Callable, etc.). Goal -> Organize & Detail. Viz/Method -> Tabbed content area. Interaction -> Clicking tabs reveals content for each type. Justification -> Prevents information overload and allows self-paced exploration. 4. Advantages/Disadvantages: Report Info -> Lists of pros and cons. Goal -> Synthesize & Decide. Viz/Method -> Two-column layout with a toggle switch. Interaction -> Toggle between "Investor View" and "Issuer View". Justification -> Tailors information to the user's perspective, making it more actionable. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .chart-container { position: relative; width: 100%; max-width: 700px; margin-left: auto; margin-right: auto; height: 350px; max-height: 50vh; }
+        @media (min-width: 768px) { .chart-container { height: 400px; } }
+        .nav-link { transition: color 0.3s, border-bottom-color 0.3s; }
+        .nav-link.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+        .tab.active { background-color: #3b82f6; color: #ffffff; }
+        .tab { transition: background-color 0.3s, color 0.3s; }
+        .perspective-toggle:checked + .toggle-label .toggle-dot { transform: translateX(100%); background-color: #3b82f6; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold text-gray-900">
+                <span class="text-blue-600">P</span>referred <span class="text-blue-600">S</span>tock
+            </div>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#concepts" class="nav-link text-gray-600 hover:text-blue-600 border-b-2 border-transparent pb-1">Core Concepts</a>
+                <a href="#comparison" class="nav-link text-gray-600 hover:text-blue-600 border-b-2 border-transparent pb-1">Comparison</a>
+                <a href="#types" class="nav-link text-gray-600 hover:text-blue-600 border-b-2 border-transparent pb-1">Types</a>
+                <a href="#perspectives" class="nav-link text-gray-600 hover:text-blue-600 border-b-2 border-transparent pb-1">Perspectives</a>
+            </div>
+            <div class="md:hidden">
+                <button id="menu-btn" class="text-gray-700 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4">
+            <a href="#concepts" class="block py-2 text-gray-600 hover:text-blue-600">Core Concepts</a>
+            <a href="#comparison" class="block py-2 text-gray-600 hover:text-blue-600">Comparison</a>
+            <a href="#types" class="block py-2 text-gray-600 hover:text-blue-600">Types</a>
+            <a href="#perspectives" class="block py-2 text-gray-600 hover:text-blue-600">Perspectives</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+
+        <section id="intro" class="text-center mb-20">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">The Investor's Hybrid Security</h1>
+            <p class="max-w-3xl mx-auto text-lg text-gray-600">
+                Welcome to the interactive guide to Preferred Stock. This tool demystifies this unique financial instrument, which blends the features of stocks and bonds. Explore its core characteristics, see how it compares to other investments, and understand its role from different perspectives.
+            </p>
+        </section>
+
+        <section id="concepts" class="mb-20 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">Core Concepts at a Glance</h2>
+                <p class="text-md text-gray-600 max-w-2xl mx-auto mt-2">Preferred stock is defined by a few key features that give it a "preferred" status over common stock. Hover over the cards below to learn about the fundamental pillars that make it a unique investment.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <div class="flex items-center text-blue-600 mb-4">
+                        <span class="text-3xl mr-4">💰</span>
+                        <h3 class="text-xl font-semibold">Fixed Dividends</h3>
+                    </div>
+                    <p class="text-gray-600">Preferred stocks typically pay a fixed, regular dividend, much like a bond's interest payment. This provides a predictable income stream, which is a primary attraction for income-focused investors.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <div class="flex items-center text-blue-600 mb-4">
+                        <span class="text-3xl mr-4">🛡️</span>
+                        <h3 class="text-xl font-semibold">Liquidation Priority</h3>
+                    </div>
+                    <p class="text-gray-600">If a company goes bankrupt, preferred shareholders get paid before common shareholders. They stand in line after bondholders but have a senior claim on assets over common equity.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <div class="flex items-center text-blue-600 mb-4">
+                        <span class="text-3xl mr-4">🤫</span>
+                        <h3 class="text-xl font-semibold">No Voting Rights</h3>
+                    </div>
+                    <p class="text-gray-600">This priority comes at a cost: preferred stockholders usually don't get to vote on corporate matters. Control is retained by common shareholders, making preferred stock a way to raise capital without diluting control.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="comparison" class="mb-20 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">Where Does It Fit?</h2>
+                <p class="text-md text-gray-600 max-w-2xl mx-auto mt-2">The true nature of preferred stock is best understood by comparing it to its neighbors in the capital structure: common stock and bonds. It's a hybrid, borrowing traits from both. Use the chart below to see a visual comparison.</p>
+            </div>
+            <div class="bg-white p-8 rounded-lg shadow-lg">
+                <div class="chart-container mb-8">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+                <div class="flex justify-center flex-wrap gap-3 mb-8">
+                    <button class="chart-btn bg-blue-500 text-white px-4 py-2 rounded-md shadow hover:bg-blue-600 transition-colors" data-metric="risk">Volatility / Risk</button>
+                    <button class="chart-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-md shadow hover:bg-gray-300 transition-colors" data-metric="income">Income Potential</button>
+                    <button class="chart-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-md shadow hover:bg-gray-300 transition-colors" data-metric="growth">Growth Potential</button>
+                    <button class="chart-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-md shadow hover:bg-gray-300 transition-colors" data-metric="priority">Liquidation Priority</button>
+                </div>
+                <div class="grid md:grid-cols-3 gap-8 text-center">
+                    <div>
+                        <h4 class="font-semibold text-lg mb-2">Bonds (Debt)</h4>
+                        <p class="text-sm text-gray-600">Lowest risk, fixed interest payments, highest priority in liquidation. No ownership or growth potential.</p>
+                    </div>
+                    <div class="border-l border-r border-gray-200 px-8">
+                        <h4 class="font-semibold text-lg mb-2 text-blue-600">Preferred Stock (Hybrid)</h4>
+                        <p class="text-sm text-gray-600">Medium risk, fixed dividends, middle priority. Limited growth potential but higher yields than bonds.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-lg mb-2">Common Stock (Equity)</h4>
+                        <p class="text-sm text-gray-600">Highest risk, variable dividends (if any), lowest priority. Highest potential for growth.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="types" class="mb-20 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">A Spectrum of Styles</h2>
+                <p class="text-md text-gray-600 max-w-2xl mx-auto mt-2">Not all preferred stocks are created equal. Issuers can customize them with different features to attract different investors. Click through the tabs to explore the most common varieties found in the U.S. market.</p>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg">
+                <div class="border-b border-gray-200">
+                    <div class="flex flex-wrap -mb-px px-4">
+                        <button class="tab active text-sm font-medium text-center p-4 border-b-2 border-transparent rounded-t-lg" data-tab="cumulative">Cumulative</button>
+                        <button class="tab text-sm font-medium text-center p-4 border-b-2 border-transparent rounded-t-lg text-gray-500 hover:text-gray-700" data-tab="callable">Callable</button>
+                        <button class="tab text-sm font-medium text-center p-4 border-b-2 border-transparent rounded-t-lg text-gray-500 hover:text-gray-700" data-tab="convertible">Convertible</button>
+                        <button class="tab text-sm font-medium text-center p-4 border-b-2 border-transparent rounded-t-lg text-gray-500 hover:text-gray-700" data-tab="participating">Participating</button>
+                    </div>
+                </div>
+                <div class="p-8">
+                    <div id="cumulative" class="tab-content">
+                        <h4 class="text-xl font-semibold mb-2">Cumulative Preferred Stock</h4>
+                        <p class="text-gray-600">Offers a significant safety net. If the company skips a dividend payment, the unpaid amount accumulates. All these "dividends in arrears" must be paid to cumulative preferred shareholders before any dividends can be paid to common shareholders.</p>
+                    </div>
+                    <div id="callable" class="tab-content hidden">
+                        <h4 class="text-xl font-semibold mb-2">Callable (Redeemable) Preferred Stock</h4>
+                        <p class="text-gray-600">Gives the issuing company the right to buy back the shares at a predetermined price after a certain date. Companies often do this if interest rates fall, allowing them to refinance at a lower dividend rate. This introduces "call risk" for the investor, capping their upside.</p>
+                    </div>
+                    <div id="convertible" class="tab-content hidden">
+                        <h4 class="text-xl font-semibold mb-2">Convertible Preferred Stock</h4>
+                        <p class="text-gray-600">Allows the holder to convert their preferred shares into a fixed number of common shares. This feature offers the safety of fixed dividends with the potential for capital appreciation if the company's common stock performs well.</p>
+                    </div>
+                    <div id="participating" class="tab-content hidden">
+                        <h4 class="text-xl font-semibold mb-2">Participating Preferred Stock</h4>
+                        <p class="text-gray-600">Provides a base fixed dividend plus an additional dividend if the company hits certain profit targets. In a liquidation, holders get their initial investment back first, and then also "participate" with common stockholders in the remaining assets.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="perspectives" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">Two Sides of the Coin</h2>
+                <p class="text-md text-gray-600 max-w-2xl mx-auto mt-2">Is preferred stock a good choice? The answer depends on who you are. Use the toggle below to see the advantages and disadvantages from the viewpoint of both an investor and the issuing company.</p>
+            </div>
+            <div class="flex justify-center items-center mb-8 space-x-4">
+                <span id="investor-label" class="font-semibold text-blue-600">Investor</span>
+                <label for="perspective-toggle" class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="perspective-toggle" class="sr-only perspective-toggle">
+                    <div class="w-11 h-6 bg-gray-200 rounded-full toggle-label">
+                        <span class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform toggle-dot"></span>
+                    </div>
+                </label>
+                <span id="issuer-label" class="font-semibold text-gray-400">Issuer</span>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div id="pros-col" class="bg-white p-8 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-semibold mb-4 flex items-center text-green-600"><span class="text-2xl mr-3">👍</span>Advantages</h3>
+                    <ul id="pros-list" class="space-y-3 text-gray-700 list-disc list-inside">
+                        <li>Stable and predictable income from fixed dividends.</li>
+                        <li>Higher claim on assets than common stock in liquidation.</li>
+                        <li>Generally lower price volatility and risk than common stock.</li>
+                        <li>Dividends may be taxed at lower qualified dividend rates.</li>
+                    </ul>
+                </div>
+                <div id="cons-col" class="bg-white p-8 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-semibold mb-4 flex items-center text-red-600"><span class="text-2xl mr-3">👎</span>Disadvantages</h3>
+                    <ul id="cons-list" class="space-y-3 text-gray-700 list-disc list-inside">
+                        <li>Limited potential for capital appreciation (price growth).</li>
+                        <li>No or limited voting rights in corporate matters.</li>
+                        <li>Call risk: the issuer may buy back the shares, capping gains.</li>
+                        <li>Price is sensitive to changes in interest rates.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-20">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>&copy; 2025 Interactive Financial Guides. All Rights Reserved.</p>
+            <p class="text-sm text-gray-400 mt-2">This application is for informational purposes only and does not constitute financial advice.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const chartData = {
+                risk: {
+                    label: 'Volatility / Risk',
+                    values: [2, 5, 9],
+                    backgroundColor: ['rgba(59, 130, 246, 0.6)', 'rgba(59, 130, 246, 0.8)', 'rgba(59, 130, 246, 1.0)'],
+                },
+                income: {
+                    label: 'Income Potential (Stability & Yield)',
+                    values: [7, 8, 3],
+                    backgroundColor: ['rgba(16, 185, 129, 0.6)', 'rgba(16, 185, 129, 0.8)', 'rgba(16, 185, 129, 1.0)'],
+                },
+                growth: {
+                    label: 'Capital Growth Potential',
+                    values: [1, 3, 9],
+                    backgroundColor: ['rgba(239, 68, 68, 0.6)', 'rgba(239, 68, 68, 0.8)', 'rgba(239, 68, 68, 1.0)'],
+                },
+                priority: {
+                    label: 'Liquidation Priority',
+                    values: [9, 6, 2],
+                    backgroundColor: ['rgba(245, 158, 11, 0.6)', 'rgba(245, 158, 11, 0.8)', 'rgba(245, 158, 11, 1.0)'],
+                }
+            };
+
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+            const comparisonChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Bonds', 'Preferred Stock', 'Common Stock'],
+                    datasets: [{
+                        label: chartData.risk.label,
+                        data: chartData.risk.values,
+                        backgroundColor: chartData.risk.backgroundColor,
+                        borderColor: 'rgba(255, 255, 255, 0.5)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 10,
+                            grid: { color: 'rgba(200, 200, 200, 0.1)' },
+                            ticks: { color: '#6b7280' }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: '#374151', font: { size: 14 } }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Relative Comparison (Score 1-10)',
+                            color: '#1f2937',
+                            font: { size: 16 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.x !== null) {
+                                        label += context.parsed.x;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const chartBtns = document.querySelectorAll('.chart-btn');
+            chartBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const metric = btn.dataset.metric;
+                    comparisonChart.data.datasets[0].data = chartData[metric].values;
+                    comparisonChart.data.datasets[0].label = chartData[metric].label;
+                    comparisonChart.data.datasets[0].backgroundColor = chartData[metric].backgroundColor;
+                    comparisonChart.update();
+
+                    chartBtns.forEach(b => {
+                        b.classList.remove('bg-blue-500', 'text-white');
+                        b.classList.add('bg-gray-200', 'text-gray-700');
+                    });
+                    btn.classList.add('bg-blue-500', 'text-white');
+                    btn.classList.remove('bg-gray-200', 'text-gray-700');
+                });
+            });
+
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetId = tab.dataset.tab;
+                    
+                    tabs.forEach(t => {
+                        t.classList.remove('active', 'text-gray-900');
+                        t.classList.add('text-gray-500');
+                    });
+                    tab.classList.add('active', 'text-gray-900');
+                    tab.classList.remove('text-gray-500');
+
+                    tabContents.forEach(content => {
+                        if (content.id === targetId) {
+                            content.classList.remove('hidden');
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            const perspectiveToggle = document.getElementById('perspective-toggle');
+            const prosList = document.getElementById('pros-list');
+            const consList = document.getElementById('cons-list');
+            const investorLabel = document.getElementById('investor-label');
+            const issuerLabel = document.getElementById('issuer-label');
+
+            const perspectives = {
+                investor: {
+                    pros: [
+                        'Stable and predictable income from fixed dividends.',
+                        'Higher claim on assets than common stock in liquidation.',
+                        'Generally lower price volatility and risk than common stock.',
+                        'Dividends may be taxed at lower qualified dividend rates.'
+                    ],
+                    cons: [
+                        'Limited potential for capital appreciation (price growth).',
+                        'No or limited voting rights in corporate matters.',
+                        'Call risk: the issuer may buy back the shares, capping gains.',
+                        'Price is sensitive to changes in interest rates.'
+                    ]
+                },
+                issuer: {
+                    pros: [
+                        'Raise capital without diluting common shareholder control.',
+                        'Flexibility in financing without strict debt covenants.',
+                        'Can qualify as Tier 1 capital for financial institutions.',
+                        'Attracts a different class of income-focused investors.'
+                    ],
+                    cons: [
+                        'Dividend payments are not tax-deductible (unlike bond interest).',
+                        'Creates a fixed obligation to pay dividends before common stock.',
+                        'Subordinated to debt, making it more expensive than bonds.',
+                        'Callable features may require higher initial yields to be attractive.'
+                    ]
+                }
+            };
+
+            perspectiveToggle.addEventListener('change', (e) => {
+                const isIssuer = e.target.checked;
+                const view = isIssuer ? 'issuer' : 'investor';
+                
+                prosList.innerHTML = perspectives[view].pros.map(item => `<li>${item}</li>`).join('');
+                consList.innerHTML = perspectives[view].cons.map(item => `<li>${item}</li>`).join('');
+
+                if (isIssuer) {
+                    investorLabel.classList.remove('text-blue-600');
+                    investorLabel.classList.add('text-gray-400');
+                    issuerLabel.classList.add('text-blue-600');
+                    issuerLabel.classList.remove('text-gray-400');
+                } else {
+                    investorLabel.classList.add('text-blue-600');
+                    investorLabel.classList.remove('text-gray-400');
+                    issuerLabel.classList.remove('text-blue-600');
+                    issuerLabel.classList.add('text-gray-400');
+                }
+            });
+
+            const menuBtn = document.getElementById('menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            menuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            const navLinks = document.querySelectorAll('nav a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if(!mobileMenu.classList.contains('hidden')) {
+                       mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+
+            const sections = document.querySelectorAll('section');
+            const headerNavLinks = document.querySelectorAll('header nav a');
+            
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.4
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        headerNavLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>
